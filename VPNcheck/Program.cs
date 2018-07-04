@@ -150,7 +150,7 @@ namespace VPNcheck
 
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("# {0}", e.Message);
             }
 
             return false;
@@ -177,7 +177,7 @@ namespace VPNcheck
 
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("# {0}", e.Message);
             }
 
             return false;
@@ -205,7 +205,7 @@ namespace VPNcheck
 
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("# {0}", e.Message);
             }
 
             return false;
@@ -234,7 +234,7 @@ namespace VPNcheck
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("# {0}",e.Message);
                 return false;
             }
 
@@ -256,6 +256,7 @@ namespace VPNcheck
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine("# {0}", e.Message);
                     return false;
                 }
             }
@@ -274,7 +275,8 @@ namespace VPNcheck
                     do
                     {
                         line = conf.ReadLine();
-                        if (!line.StartsWith("#")) Console.WriteLine(line);
+                        //if (!line.StartsWith("#")) Console.WriteLine(line);
+                        if ((!line.StartsWith("#"))&&(!line.Contains("remote"))) Console.WriteLine(line);
                         if (line.StartsWith("client")) client = true;
                         if (line.StartsWith("proto"))
                         {
@@ -305,19 +307,21 @@ namespace VPNcheck
                             }
                             
                             if (client && ( RemoteEndPoint.Port!=0))
-                            { 
-                              Console.WriteLine("!!! connect to {0} ({2} {3}) via {1} !!!", RemoteEndPoint, proto, host, hnt);
+                            {
+                                string tmpcaption = Console.Title;
+                                Console.Title=string.Format( "!!! connect to {0} ({2} {3}) via {1} !!!", RemoteEndPoint, proto, host, hnt);
                                 switch (proto)
                                 {
                                      case ProtocolType.Tcp:
-                                        Console.WriteLine("Result {0}", CheckOpenVPNtcp(RemoteEndPoint));
+                                        Console.WriteLine("# {1} {0}{2}", CheckOpenVPNtcp(RemoteEndPoint)?"OK"+Environment.NewLine: "FAILED" + Environment.NewLine + "#", RemoteEndPoint,line);
                                         break;
                                      case ProtocolType.Udp:
-                                        Console.WriteLine("Result {0}", CheckOpenVPNudp(RemoteEndPoint));
+                                        Console.WriteLine("#{1} {0}{2}", CheckOpenVPNudp(RemoteEndPoint) ? "OK" + Environment.NewLine: "FAILED" + Environment.NewLine + "#", RemoteEndPoint, line);
                                         break;
                                     default:
                                         break;
                                 }
+                                Console.Title = tmpcaption;
                             }
                         }
                     } while (!conf.EndOfStream);
@@ -331,14 +335,18 @@ namespace VPNcheck
 
         public static bool OpenVPNisInstalled()
         {
-            string ovpnexe = (string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\OpenVPN-GUI", "exe_path", null);
             string ovpnver = (string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenVPN", "DisplayName", "Open VPN not installed");
             Console.WriteLine(ovpnver);
+
+            RegistryKey ovpn = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\OpenVPN-GUI",false); //old behavior
+            if (ovpn==null) ovpn = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\OpenVPN",false);
+            if (ovpn == null) return false;
+            string ovpnexe = (string)ovpn.GetValue("exe_path", null);
             bool result = System.IO.File.Exists(ovpnexe);
             if (result)
             {
-                string confdir = (string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\OpenVPN-GUI", "config_dir", null);
-                string confext = (string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\OpenVPN-GUI", "config_ext", null);
+                string confdir = (string)ovpn.GetValue("config_dir", null);
+                string confext = (string)ovpn.GetValue( "config_ext", null);
                 foreach (string finf in System.IO.Directory.GetFiles(confdir, "*." + confext))
                 {
                     Console.WriteLine(finf);
@@ -388,6 +396,7 @@ namespace VPNcheck
             Console.WriteLine("***AntiSpywareProduct:");
             AntiSpywareProductInstalled();
             Console.WriteLine("OpenVPN"); OpenVPNisInstalled();
+            Console.Title = "[DONE] Hit Enter to exit";
             Console.ReadLine();
         }
     }
