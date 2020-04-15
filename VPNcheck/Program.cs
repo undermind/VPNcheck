@@ -309,7 +309,7 @@ namespace VPNcheck
                     {
                         line = conf.ReadLine();
                         //if (!line.StartsWith("#")) Console.WriteLine(line);
-                        if ((!line.StartsWith("#")) && (!line.Contains("remote")))
+                        if ((!line.StartsWith("#")) && (!line.Contains("remote ")))
                         {
                             Console.WriteLine(line);
                             optconfig.AppendLine(line);
